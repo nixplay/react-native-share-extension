@@ -33,7 +33,7 @@ public class ShareModule extends ReactContextBaseJavaModule {
   }
 
   @ReactMethod
-  public void data(Promise promise) {
+  public void data(ReadableMap options, Promise promise) {
       promise.resolve(processIntent());
   }
 
