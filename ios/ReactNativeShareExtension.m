@@ -44,18 +44,18 @@ RCT_EXPORT_METHOD(close) {
 
 
 RCT_EXPORT_METHOD(openURL:(NSString *)url) {
-  UIApplication *application = [UIApplication sharedApplication];
-  NSURL *urlToOpen = [NSURL URLWithString:[url stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
-  [application openURL:urlToOpen options:@{} completionHandler: nil];
+    UIApplication *application = [UIApplication sharedApplication];
+    NSURL *urlToOpen = [NSURL URLWithString:[url stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
+    [application openURL:urlToOpen options:@{} completionHandler: nil];
 }
 
 
 
-RCT_REMAP_METHOD(data,
-                 resolver:(RCTPromiseResolveBlock)resolve
-                 rejecter:(RCTPromiseRejectBlock)reject)
+RCT_EXPORT_METHOD(data:(NSDictionary*)options
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
 {
-    [self extractDataFromContext: extensionContext withCallback:^(NSString* val, NSString* contentType, NSException* err) {
+    [self extractDataFromContext: extensionContext withCallback:^(id _Nonnull val, NSString* _Nonnull contentType, NSException * _Nonnull err) {
         if(err) {
             reject(@"error", err.description, nil);
         } else {
@@ -67,57 +67,60 @@ RCT_REMAP_METHOD(data,
     }];
 }
 
-- (void)extractDataFromContext:(NSExtensionContext *)context withCallback:(void(^)(NSString *value, NSString* contentType, NSException *exception))callback {
+- (void)extractDataFromContext:(NSExtensionContext *_Nullable)context withCallback:(void(^ _Nonnull)(id _Nonnull value, NSString* _Nonnull contentType, NSException * _Nonnull exception))callback {
     @try {
         NSExtensionItem *item = [context.inputItems firstObject];
         NSArray *attachments = item.attachments;
-
-        __block NSItemProvider *urlProvider = nil;
-        __block NSItemProvider *imageProvider = nil;
-        __block NSItemProvider *textProvider = nil;
-
-        [attachments enumerateObjectsUsingBlock:^(NSItemProvider *provider, NSUInteger idx, BOOL *stop) {
-            if([provider hasItemConformingToTypeIdentifier:URL_IDENTIFIER]) {
-                urlProvider = provider;
-                *stop = YES;
-            } else if ([provider hasItemConformingToTypeIdentifier:TEXT_IDENTIFIER]){
-                textProvider = provider;
-                *stop = YES;
-            } else if ([provider hasItemConformingToTypeIdentifier:IMAGE_IDENTIFIER]){
-                imageProvider = provider;
-                *stop = YES;
+        NSMutableArray *mutableUrls = [[NSMutableArray alloc] init];
+        dispatch_group_t group = dispatch_group_create();
+        
+        // Load images from selection
+        [attachments enumerateObjectsUsingBlock:^(NSItemProvider *itemProvider, NSUInteger idx, BOOL *stop) {
+            if ([itemProvider hasItemConformingToTypeIdentifier:URL_IDENTIFIER]) {
+                dispatch_group_enter(group);
+                [itemProvider loadItemForTypeIdentifier:URL_IDENTIFIER options:nil completionHandler:^(id<NSSecureCoding> item, NSError *error) {
+                    NSURL *url = (NSURL *)item;
+                    
+                    if(error == nil) {
+                        [mutableUrls addObject:[url absoluteString]];
+                    }
+                    dispatch_group_leave(group);
+                }];
+            } else if ([itemProvider hasItemConformingToTypeIdentifier:IMAGE_IDENTIFIER]) {
+                
+                dispatch_group_enter(group);
+                
+                [itemProvider loadItemForTypeIdentifier:IMAGE_IDENTIFIER
+                                                options:nil
+                                      completionHandler: ^(NSURL *url, NSError *error) {
+                                          if(error == nil) {
+                                              [mutableUrls addObject:[url absoluteString]];
+                                          }
+                                          dispatch_group_leave(group);
+                                      }];
+            } else if ([itemProvider hasItemConformingToTypeIdentifier:TEXT_IDENTIFIER]) {
+                dispatch_group_enter(group);
+                [itemProvider loadItemForTypeIdentifier:TEXT_IDENTIFIER options:nil completionHandler:^(id<NSSecureCoding> item, NSError *error) {
+                    NSString *text = (NSString *)item;
+                    
+                    if(error == nil) {
+                        [mutableUrls addObject:text];
+                    }
+                    dispatch_group_leave(group);
+                }];
+            } else {
+                dispatch_group_leave(group);
+                if(callback) {
+                    callback(nil, nil, [NSException exceptionWithName:@"Error" reason:@"couldn't find provider" userInfo:nil]);
+                }
             }
         }];
-
-        if(urlProvider) {
-            [urlProvider loadItemForTypeIdentifier:URL_IDENTIFIER options:nil completionHandler:^(id<NSSecureCoding> item, NSError *error) {
-                NSURL *url = (NSURL *)item;
-
-                if(callback) {
-                    callback([url absoluteString], @"text/plain", nil);
-                }
-            }];
-        } else if (imageProvider) {
-            [imageProvider loadItemForTypeIdentifier:IMAGE_IDENTIFIER options:nil completionHandler:^(id<NSSecureCoding> item, NSError *error) {
-                NSURL *url = (NSURL *)item;
-
-                if(callback) {
-                    callback([url absoluteString], [[[url absoluteString] pathExtension] lowercaseString], nil);
-                }
-            }];
-        } else if (textProvider) {
-            [textProvider loadItemForTypeIdentifier:TEXT_IDENTIFIER options:nil completionHandler:^(id<NSSecureCoding> item, NSError *error) {
-                NSString *text = (NSString *)item;
-
-                if(callback) {
-                    callback(text, @"text/plain", nil);
-                }
-            }];
-        } else {
+        
+        dispatch_group_notify(group, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
             if(callback) {
-                callback(nil, nil, [NSException exceptionWithName:@"Error" reason:@"couldn't find provider" userInfo:nil]);
+                callback(mutableUrls, IMAGE_IDENTIFIER, nil);
             }
-        }
+        });
     }
     @catch (NSException *exception) {
         if(callback) {
