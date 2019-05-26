@@ -2,16 +2,15 @@ package com.github.alinz.reactNativeShareExtension;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.util.Log;
+
+import com.facebook.react.bridge.ActivityEventListener;
+import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
-import com.facebook.react.bridge.ActivityEventListener;
 import com.facebook.react.bridge.ReactMethod;
+import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
-import com.facebook.react.bridge.Arguments;
-
-import javax.annotation.Nullable;
 
 public class ShareExModule extends ReactContextBaseJavaModule implements ActivityEventListener {
 
@@ -25,7 +24,7 @@ public class ShareExModule extends ReactContextBaseJavaModule implements Activit
     }
 
     @ReactMethod
-    public void data(Promise promise) {
+    public void data(ReadableMap options, Promise promise) {
         promise.resolve(processIntent());
     }
 
@@ -64,7 +63,7 @@ public class ShareExModule extends ReactContextBaseJavaModule implements Activit
     }
 
     public void onActivityResult(final int requestCode, final int resultCode, final Intent data) { }
-  
+
     public void onActivityResult(Activity activity, int requestCode, int resultCode, Intent data) { }
 
     public void onNewIntent(Intent intent) {  }

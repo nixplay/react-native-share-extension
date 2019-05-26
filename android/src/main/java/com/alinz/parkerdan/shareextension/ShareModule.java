@@ -1,18 +1,16 @@
 package com.alinz.parkerdan.shareextension;
 
-import com.facebook.react.bridge.ReactContextBaseJavaModule;
-import com.facebook.react.bridge.ReactApplicationContext;
-import com.facebook.react.bridge.Promise;
-import com.facebook.react.bridge.ReactMethod;
-import com.facebook.react.bridge.WritableMap;
-import com.facebook.react.bridge.Arguments;
-
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 
-import android.graphics.Bitmap;
-import java.io.InputStream;
+import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.Promise;
+import com.facebook.react.bridge.ReactApplicationContext;
+import com.facebook.react.bridge.ReactContextBaseJavaModule;
+import com.facebook.react.bridge.ReactMethod;
+import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.WritableMap;
 
 
 public class ShareModule extends ReactContextBaseJavaModule {
@@ -33,7 +31,7 @@ public class ShareModule extends ReactContextBaseJavaModule {
   }
 
   @ReactMethod
-  public void data(Promise promise) {
+  public void data(ReadableMap options, Promise promise) {
       promise.resolve(processIntent());
   }
 

@@ -2,3 +2,4 @@
 *.iml
 .tags
 .tags1
+examples/Sample1/android/.settings/org.eclipse.buildship.core.prefs
