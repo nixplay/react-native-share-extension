@@ -14,7 +14,7 @@ Pod::Spec.new do |s|
   s.ios.deployment_target = '9.0'
   s.tvos.deployment_target = '10.0'
 
-  s.source       = { :git => "https://github.com/nixplay/react-native-share-extension.git", :tag => "1.2.2-dev1" }
+  s.source       = { :git => "https://github.com/nixplay/react-native-share-extension.git", :tag => "release/1.2.2" }
   s.source_files  = "ios/**/*.{h,m}"
 
   s.dependency 'AFNetworking'
