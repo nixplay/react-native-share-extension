@@ -17,5 +17,9 @@ Pod::Spec.new do |s|
   s.source       = { :git => "https://github.com/nixplay/react-native-share-extension.git", :tag => "1.2.2-dev1" }
   s.source_files  = "ios/**/*.{h,m}"
 
-  s.dependency 'React'
+  s.dependency 'AFNetworking'
+  s.dependency 'SDAVAssetExportSession'
+	s.dependency 'React'
+	s.dependency 'NixNetwork'
+
 end
